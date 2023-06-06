@@ -1,4 +1,6 @@
 import pygame
+import keyboard
+import math
 
 
 class wall():
@@ -23,23 +25,42 @@ class wall():
             return False
 
 
-
-
-
-
+class player():
+    def __init__(self,pos):
+        self.pos = pos
+        self.velocity = [0,0]
+    def draw(self):
+        pygame.draw.circle(screen, (255,255,255), self.pos, 10)
+    def update(self):
+        if keyboard.is_pressed("w"):
+            self.velocity[1] -= 1
+        if keyboard.is_pressed("a"):
+            self.velocity[0] -= 1
+        if keyboard.is_pressed("s"):
+            self.velocity[1] += 1
+        if keyboard.is_pressed("d"):
+            self.velocity[0] += 1
+        self.velocity[0] *= 0.9
+        self.velocity[1] *= 0.9
+        self.pos[0] += self.velocity[0]
+        self.pos[1] += self.velocity[1]
 
 
 def calculation(n, pos1, xdeviance, ydeviance,sample):
                 return abs(math.ceil(pos1[0] + xdeviance*(n/(sample*2)))), abs(math.ceil(pos1[1] + (ydeviance*(n/(sample*2)))))
 
-def drawline(pos1,pos2,r,g,b):
+def drawline(pos1,angle,distance):
+
+
+
+    pos2 = (x,y)
+
     xdeviance = pos2[0] - pos1[0]
     ydeviance = pos2[1] - pos1[1]
 
     samplesize = 50
 
-
-    for n in range(samplesize*2):
+    for n in range(samplesize):
         collision(calculation(n+1, pos1, xdeviance,ydeviance,samplesize))
 
 
@@ -54,6 +75,11 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("My Game")
 done = False
 clock = pygame.time.Clock()
+
+
+playerobj = player([500,500])
+
+angle = 0
 
 walls = []
 
@@ -72,6 +98,10 @@ while not done:
 
     screen.fill(BLACK)
 
+    playerobj.update()
+
+
+
     if pygame.mouse.get_pressed()[0]:
         collided = False
         point = pygame.mouse.get_pos()
@@ -85,9 +115,32 @@ while not done:
         else:
             print("false")
 
+    if keyboard.is_pressed("left"):
+        angle -= 1
+        if angle < 0:
+            angle = 360
+    if keyboard.is_pressed("right"):
+        angle += 1
+        if angle > 360:
+            angle = 1
+    radians = angle * 3.14159 /180
+
+
+    x1 = 50 * math.sin(radians)
+    y1 = 50 * math.cos(radians)
+
+    shootpos = (playerobj.pos[0]+x1,playerobj.pos[1]+y1)
+
 
     for obj in walls:
         obj.draw()
+
+    playerobj.draw()
+
+    for n in range(5):
+        shootpos = (playerobj.pos[0]+(x1*n),playerobj.pos[1]+(y1*n))
+        pygame.draw.circle(screen,(255,255,255),shootpos,2)
+
 
 
     pygame.display.flip()
