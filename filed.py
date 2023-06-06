@@ -91,11 +91,11 @@ def drawline(pos1,pos2,obj):
     xdeviance = pos2[0] - pos1[0]
     ydeviance = pos2[1] - pos1[1]
 
-    samplesize = 10
+    samplesize = 20
 
     for n in range(samplesize):
-         if obj.collision(calculation(n+1, pos1, xdeviance,ydeviance,samplesize)):
-            print("oh my gah")
+        if obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize)):
+            incursionpos = calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize)
             break
 
 
