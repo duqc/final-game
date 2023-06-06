@@ -6,14 +6,10 @@ import math
 class wall():
     def __init__(self, pos1, pos2):
         self.pos1 = pos1
-        print(self.pos1)
         self.pos2 = pos2
-        print(self.pos2)
 
         self.sizex = abs(pos1[0]-pos2[0])
-        print(self.sizex)
         self.sizey = abs(pos1[1]-pos2[1])
-        print(self.sizey)
 
     def draw(self):
         pygame.draw.rect(screen,RED,(self.pos1[0],self.pos1[1],self.sizex,self.sizey))
@@ -23,6 +19,32 @@ class wall():
             return True
         else:
             return False
+
+class projectile():
+    def __init__(self,pos,angle):
+        self.pos = pos
+        self.angle = angle
+        self.ticker = 0
+    def update(self,distance, walls):
+        if self.ticker != 0:
+            self.ticker -= 1
+        x1 = distance * math.sin(self.angle)
+        y1 = distance * math.cos(self.angle)
+        if self.ticker <= 0:
+            collided = False
+            for obj in walls:
+                if obj.collision([self.pos[0]+x1,self.pos[1]+y1]):
+                    collided = True
+                    collisionpos = [self.pos[0]+x1,self.pos[1]+y1]
+                    collidedObj = obj
+                    break
+            if collided:
+                drawline(self.pos, collisionpos, collidedObj)
+            else:
+                self.pos = [self.pos[0]+x1,self.pos[1]+y1]
+
+            self.ticker = 30
+        pygame.draw.circle(screen,(0,0,255), self.pos, 2)
 
 
 class player():
@@ -61,27 +83,30 @@ class player():
 
 
 def calculation(n, pos1, xdeviance, ydeviance,sample):
-                return abs(math.ceil(pos1[0] + xdeviance*(n/(sample*2)))), abs(math.ceil(pos1[1] + (ydeviance*(n/(sample*2)))))
+                return abs((pos1[0] + xdeviance*(n/(sample*2)))), abs(pos1[1] + (ydeviance*(n/(sample*2))))
 
-def drawline(pos1,angle,distance):
+def drawline(pos1,pos2,obj):
 
-
-
-    pos2 = (x,y)
 
     xdeviance = pos2[0] - pos1[0]
     ydeviance = pos2[1] - pos1[1]
 
-    samplesize = 50
+    samplesize = 10
 
     for n in range(samplesize):
-        collision(calculation(n+1, pos1, xdeviance,ydeviance,samplesize))
+         if obj.collision(calculation(n+1, pos1, xdeviance,ydeviance,samplesize)):
+            print("oh my gah")
+            break
+
 
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+
+
+testing = False
 
 pygame.init()
 size = (1000,700)
@@ -95,13 +120,20 @@ playerobj = player([500,300])
 
 angle = 0
 
+
+
+bullets = []
+
+
 walls = []
 
 walls.append(wall((0,0),(40,40)))
 walls.append(wall((60,60),(100,100)))
 
-walls.append(wall((0,0),(10,700)))
-walls.append(wall((10,0),(1000,10)))
+walls.append(wall((-100,-100),(10,700)))
+walls.append(wall((10,-100),(1000,10)))
+walls.append(wall((990,0),(1000,800)))
+walls.append(wall((0,690),(1000,800)))
 
 # -------- Main Program Loop -----------
 while not done:
@@ -146,6 +178,11 @@ while not done:
     shootpos = (playerobj.pos[0]+x1,playerobj.pos[1]+y1)
 
 
+
+    if keyboard.is_pressed("space") and not testing:
+        bullets.append(projectile(playerobj.pos, radians))
+        testing = True
+
     for obj in walls:
         obj.draw()
 
@@ -155,7 +192,8 @@ while not done:
         shootpos = (playerobj.pos[0]+(x1*n),playerobj.pos[1]+(y1*n))
         pygame.draw.circle(screen,(255,255,255),shootpos,2)
 
-
+    for obj in bullets:
+            obj.update(50,walls)
 
     pygame.display.flip()
     # --- Limit to 60 frames per second
