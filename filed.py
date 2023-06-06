@@ -31,7 +31,7 @@ class player():
         self.velocity = [0,0]
     def draw(self):
         pygame.draw.circle(screen, (255,255,255), self.pos, 10)
-    def update(self):
+    def update(self,walls):
         if keyboard.is_pressed("w"):
             self.velocity[1] -= 1
         if keyboard.is_pressed("a"):
@@ -44,6 +44,20 @@ class player():
         self.velocity[1] *= 0.9
         self.pos[0] += self.velocity[0]
         self.pos[1] += self.velocity[1]
+
+        for obj in walls:
+            if obj.collision([self.pos[0]+10,self.pos[1]]):
+                self.velocity[0] = 0
+                self.pos[0] = obj.pos1[0]-10
+            elif obj.collision([self.pos[0]-10,self.pos[1]]):
+                self.velocity[0] = 0
+                self.pos[0] = obj.pos2[0]+10
+            if obj.collision([self.pos[0], self.pos[1]-10]):
+                self.velocity[1] = 0
+                self.pos[1] = obj.pos2[1]+10
+            elif obj.collision([self.pos[0],self.pos[1]+10]):
+                self.velocity[1] = 0
+                self.pos[1] = obj.pos1[1]-10
 
 
 def calculation(n, pos1, xdeviance, ydeviance,sample):
@@ -70,24 +84,24 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
 pygame.init()
-size = (1660, 1050)
+size = (1000,700)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("My Game")
 done = False
 clock = pygame.time.Clock()
 
 
-playerobj = player([500,500])
+playerobj = player([500,300])
 
 angle = 0
 
 walls = []
 
-walls.append(wall((size[0]/2,0),size))
-
 walls.append(wall((0,0),(40,40)))
-
 walls.append(wall((60,60),(100,100)))
+
+walls.append(wall((0,0),(10,700)))
+walls.append(wall((10,0),(1000,10)))
 
 # -------- Main Program Loop -----------
 while not done:
@@ -98,7 +112,7 @@ while not done:
 
     screen.fill(BLACK)
 
-    playerobj.update()
+    playerobj.update(walls)
 
 
 
@@ -115,11 +129,11 @@ while not done:
         else:
             print("false")
 
-    if keyboard.is_pressed("left"):
+    if keyboard.is_pressed("right"):
         angle -= 1
         if angle < 0:
             angle = 360
-    if keyboard.is_pressed("right"):
+    if keyboard.is_pressed("left"):
         angle += 1
         if angle > 360:
             angle = 1
