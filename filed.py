@@ -25,6 +25,7 @@ class projectile():
         self.pos = pos
         self.angle = angle
         self.ticker = 0
+        self.timer = 500
     def update(self,distance, walls):
         if self.ticker != 0:
             self.ticker -= 1
@@ -45,6 +46,11 @@ class projectile():
 
             self.ticker = 30
         pygame.draw.circle(screen,(0,0,255), self.pos, 2)
+        self.timer -= 1
+        if self.timer == 0:
+            return True
+        else:
+            return False
 
 
 class player():
@@ -80,6 +86,7 @@ class player():
             elif obj.collision([self.pos[0],self.pos[1]+10]):
                 self.velocity[1] = 0
                 self.pos[1] = obj.pos1[1]-10
+
 
 
 def calculation(n, pos1, xdeviance, ydeviance,sample):
@@ -127,12 +134,9 @@ bullets = []
 
 walls = []
 
-walls.append(wall((0,0),(40,40)))
-walls.append(wall((60,60),(100,100)))
-
 walls.append(wall((-100,-100),(10,700)))
 walls.append(wall((10,-100),(1000,10)))
-walls.append(wall((990,0),(1000,800)))
+walls.append(wall((990,0),(1300,800)))
 walls.append(wall((0,690),(1000,800)))
 
 # -------- Main Program Loop -----------
@@ -162,13 +166,13 @@ while not done:
             print("false")
 
     if keyboard.is_pressed("right"):
-        angle -= 1
+        angle -= 0.5
         if angle < 0:
-            angle = 360
+            angle = angle + 360
     if keyboard.is_pressed("left"):
-        angle += 1
+        angle += 0.5
         if angle > 360:
-            angle = 1
+            angle = angle -360
     radians = angle * 3.14159 /180
 
 
@@ -179,9 +183,8 @@ while not done:
 
 
 
-    if keyboard.is_pressed("space") and not testing:
+    if keyboard.is_pressed("space"):
         bullets.append(projectile(playerobj.pos, radians))
-        testing = True
 
     for obj in walls:
         obj.draw()
@@ -193,10 +196,12 @@ while not done:
         pygame.draw.circle(screen,(255,255,255),shootpos,2)
 
     for obj in bullets:
-            obj.update(50,walls)
+            if obj.update(50,walls):
+                bullets.remove(obj)
 
     pygame.display.flip()
     # --- Limit to 60 frames per second
+
     clock.tick(60)
 
 
