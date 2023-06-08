@@ -77,15 +77,15 @@ class player():
         pygame.draw.circle(screen, (255,255,255), self.pos, 10)
     def update(self,walls):
         if keyboard.is_pressed("w"):
-            self.velocity[1] -= 1
+            self.velocity[1] -= 0.5
         if keyboard.is_pressed("a"):
-            self.velocity[0] -= 1
+            self.velocity[0] -= 0.5
         if keyboard.is_pressed("s"):
-            self.velocity[1] += 1
+            self.velocity[1] += 0.5
         if keyboard.is_pressed("d"):
-            self.velocity[0] += 1
-        self.velocity[0] *= 0.9
-        self.velocity[1] *= 0.9
+            self.velocity[0] += 0.5
+        self.velocity[0] *= 0.8
+        self.velocity[1] *= 0.8
         self.pos[0] += self.velocity[0]
         self.pos[1] += self.velocity[1]
 
@@ -138,7 +138,7 @@ testing = False
 
 pygame.init()
 size = (1000,700)
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode(size, pygame.RESIZABLE)
 pygame.display.set_caption("My Game")
 done = False
 clock = pygame.time.Clock()
@@ -154,18 +154,29 @@ bullets = []
 
 
 walls = []
+walls.append(wall((0,0),(size[0],10)))
+walls.append(wall((size[0]-20,0),(size[0],size[1]+60)))
+walls.append(wall((0,0),(10,size[1]+60)))
+walls.append(wall((0,size[1]-10),(size[0],size[1])))
 
-walls.append(wall((-100,-100),(10,700)))
-walls.append(wall((10,-100),(1000,10)))
-walls.append(wall((990,0),(1300,800)))
-walls.append(wall((0,690),(1000,800)))
 
-# -------- Main Program Loop -----------
+
+walls.append(wall((300,400),(600,420)))
+
+# -------- Main Program Loop -------------------------------------------------------------------------------------------------------------------
 while not done:
     # --- Main event loop
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+        if event.type == pygame.VIDEORESIZE:
+            surface = pygame.display.set_mode((event.w, event.h),pygame.RESIZABLE)
+            size = (event.w,event.h)
+            print("hallal")
+            walls[0] = wall((0,0),(size[0],10))
+            walls[1] = wall((size[0]-20,0),(size[0],size[1]+60))
+            walls[2] = wall((0,0),(10,size[1]+60))
+            walls[3] = wall((0,size[1]-10),(size[0]+60,size[1]+60))
 
     screen.fill(BLACK)
 
@@ -174,11 +185,11 @@ while not done:
 
 
     if keyboard.is_pressed("right"):
-        angle -= 0.5
+        angle -= 1
         if angle < 0:
             angle = angle + 360
     if keyboard.is_pressed("left"):
-        angle += 0.5
+        angle += 1
         if angle > 360:
             angle = angle -360
     radians = angle * 3.14159 /180
