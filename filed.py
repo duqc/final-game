@@ -16,9 +16,25 @@ class wall():
 
     def collision(self,point):
         if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
-            return True
+
+            right = abs(point[0] - self.pos1[0])
+            left = abs(point[0] - self.pos2[0])
+            down = abs(point[1] - self.pos1[1])
+            up = abs(point[1] - self.pos2[1])
+
+            thething = 1
+            smallest = right
+            if smallest > left:
+                smallest = left
+                thething = 2
+            if smallest > down:
+                smallest = down
+                thething = 3
+            if smallest > up:
+                thething = 4
+            return (True, thething)
         else:
-            return False
+            return (False, 0)
 
 class projectile():
     def __init__(self,pos,angle):
@@ -34,7 +50,7 @@ class projectile():
         if self.ticker <= 0:
             collided = False
             for obj in walls:
-                if obj.collision([self.pos[0]+x1,self.pos[1]+y1]):
+                if obj.collision([self.pos[0]+x1,self.pos[1]+y1])[0]:
                     collided = True
                     collisionpos = [self.pos[0]+x1,self.pos[1]+y1]
                     collidedObj = obj
@@ -74,16 +90,16 @@ class player():
         self.pos[1] += self.velocity[1]
 
         for obj in walls:
-            if obj.collision([self.pos[0]+10,self.pos[1]]):
+            if obj.collision([self.pos[0]+10,self.pos[1]])[0]:
                 self.velocity[0] = 0
                 self.pos[0] = obj.pos1[0]-10
-            elif obj.collision([self.pos[0]-10,self.pos[1]]):
+            elif obj.collision([self.pos[0]-10,self.pos[1]])[0]:
                 self.velocity[0] = 0
                 self.pos[0] = obj.pos2[0]+10
-            if obj.collision([self.pos[0], self.pos[1]-10]):
+            if obj.collision([self.pos[0], self.pos[1]-10])[0]:
                 self.velocity[1] = 0
                 self.pos[1] = obj.pos2[1]+10
-            elif obj.collision([self.pos[0],self.pos[1]+10]):
+            elif obj.collision([self.pos[0],self.pos[1]+10])[0]:
                 self.velocity[1] = 0
                 self.pos[1] = obj.pos1[1]-10
 
@@ -101,7 +117,12 @@ def drawline(pos1,pos2,obj):
     samplesize = 20
 
     for n in range(samplesize):
-        if obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize)):
+        if obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize))[0]:
+
+            sidehit = obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize))[1]
+
+            print(sidehit)
+
             incursionpos = calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize)
             break
 
@@ -152,19 +173,6 @@ while not done:
 
 
 
-    if pygame.mouse.get_pressed()[0]:
-        collided = False
-        point = pygame.mouse.get_pos()
-        for obj in walls:
-            if obj.collision(point):
-                collided = True
-                #find point of collision
-                break
-        if collided:
-            print("true")
-        else:
-            print("false")
-
     if keyboard.is_pressed("right"):
         angle -= 0.5
         if angle < 0:
@@ -183,7 +191,7 @@ while not done:
 
 
 
-    if keyboard.is_pressed("space"):
+    if keyboard.is_pressed("space") and not bullets:
         bullets.append(projectile(playerobj.pos, radians))
 
     for obj in walls:
