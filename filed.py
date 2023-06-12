@@ -21,7 +21,7 @@ class wall():
             left = abs(point[0] - self.pos2[0])
             down = abs(point[1] - self.pos1[1])
             up = abs(point[1] - self.pos2[1])
-            
+
             thething = 1
             smallest = right
             if smallest > left:
@@ -35,31 +35,48 @@ class wall():
             return (True, thething)
         else:
             return (False, 0)
-        
+
 class winnermode(wall):
     def __init__(self, pos1, pos2):
         super().__init__(pos1,pos2)
     def collision(self, point):
         if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
             return(True, 5)
-        else: 
+        else:
             return(False,0)
     def draw(self):
         pygame.draw.rect(screen,GREEN,(self.pos1[0],self.pos1[1],self.sizex,self.sizey))
-        
+
+class line():
+    def __init__(self,pos1,pos2):
+        self.pos1 = pos1
+        self.pos2 = pos2
+        self.timer = 40
+    def update(self):
+        fade = self.timer/40
+        print(fade)
+        pygame.draw.line(screen, [255*fade,255*fade,255*fade], self.pos1, self.pos2)
+        if self.timer == 0:
+            return True
+        else:
+            self.timer -= 1
+            return False
+
 
 class projectile():
     def __init__(self,pos,angle):
         self.pos = pos
         self.angle = angle
         self.ticker = 0
-        self.timer = 500
-    def update(self,distance, walls):
-        
+        self.timer = 700
+    def update(self,distance, walls, iteration):
+        global lines
         if self.ticker != 0:
             self.ticker -= 1
         x1 = distance * math.sin(self.angle)
         y1 = distance * math.cos(self.angle)
+
+        pos1 = self.pos
         if self.ticker <= 0:
             collided = False
             for obj in walls:
@@ -73,7 +90,8 @@ class projectile():
                     break
             if collided:
                 bruh = drawline(self.pos, collisionpos, collidedObj)
-                print(bruh[0])
+                lines.append(line(self.pos, bruh[1]))
+                distleft = 50 - math.sqrt((abs(self.pos[0]-bruh[1][0]))**2 + (abs(self.pos[1]-bruh[1][1]))**2)
                 match bruh[0]:
                     case 1:
                         self.angle = -self.angle
@@ -90,13 +108,18 @@ class projectile():
                         self.angle = normal-self.angle
                         self.pos = bruh[1]
 
+
+                self.update(distleft, walls, 1)
+
             else:
                 self.pos = [self.pos[0]+x1,self.pos[1]+y1]
-
+                lines.append(line(pos1,self.pos))
             self.ticker = 30
+        if not iteration == 0:
+          lines.append(line(pos1,self.pos))
         pygame.draw.circle(screen,(0,0,255), self.pos, 2)
         self.timer -= 1
-        return self.timer == 0 
+        return self.timer == 0
 
 
 class player():
@@ -174,7 +197,7 @@ playerobj = player([500,300])
 
 angle = 0
 
-
+lines = []
 
 bullets = []
 
@@ -222,7 +245,7 @@ while not done:
 
 
 
-    if keyboard.is_pressed("space") and not bullets:
+    if keyboard.is_pressed("space")and not bullets:
         bullets.append(projectile(playerobj.pos, radians))
 
     for obj in walls:
@@ -234,10 +257,16 @@ while not done:
         shootpos = (playerobj.pos[0]+(x1*n),playerobj.pos[1]+(y1*n))
         pygame.draw.circle(screen,(255,255,255),shootpos,2)
 
+    for obj in lines:
+        if obj.update():
+            lines.remove(obj)
+
     for obj in bullets:
-            winner = obj.update(50,walls)
+            winner = obj.update(50,walls, 0)
             if winner == "lol":
-                walls = walls[:4]
+                c = 4/3
+                walls = walls[      :3       +1]
+                lines = []
                 bullets.remove(obj)
                 playerobj = player([500,300])
                 angle = 0
