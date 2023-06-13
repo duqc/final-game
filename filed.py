@@ -1,12 +1,17 @@
 import pygame
 import keyboard
 import math
-
+import csv
+import ast
 
 class wall():
     def __init__(self, pos1, pos2):
         self.pos1 = pos1
         self.pos2 = pos2
+
+        self.type = 1
+
+        self.on = 1
 
         self.sizex = abs(pos1[0]-pos2[0])
         self.sizey = abs(pos1[1]-pos2[1])
@@ -39,6 +44,7 @@ class wall():
 class winnermode(wall):
     def __init__(self, pos1, pos2):
         super().__init__(pos1,pos2)
+        self.type = 2
     def collision(self, point):
         if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
             return(True, 5)
@@ -209,10 +215,34 @@ walls.append(wall((-100,-100),(10,size[1]+60)))
 walls.append(wall((-100,size[1]-10),(size[0]+100,size[1]+100)))
 
 
-
-
+"""
 walls.append(wall((300,400),(600,420)))
 walls.append(winnermode((300,450),(350,500)))
+
+with open('level1.csv', 'w', newline='') as outfile:
+    writer = csv.writer(outfile)
+    for x in walls[4:]:
+        writer.writerow([x.pos1,x.pos2,x.type,x.on])
+"""
+
+
+with open('level1.csv', 'r', newline='') as infile:
+    reader = csv.reader(infile)
+    for x in reader:
+        peram = []
+        for y in x:
+            if len(y) == 1:
+                peram.append(int(y))
+            else:
+                peram.append(ast.literal_eval(y))
+        if peram[2] == 1:
+            walls.append(wall(peram[0],peram[1]))
+        elif peram[2] == 2:
+            walls.append(winnermode(peram[0],peram[1]))
+
+
+
+
 
 
 
@@ -242,7 +272,6 @@ while not done:
     y1 = 50 * math.cos(radians)
 
     shootpos = (playerobj.pos[0]+x1,playerobj.pos[1]+y1)
-
 
 
     if keyboard.is_pressed("space")and not bullets:
