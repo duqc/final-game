@@ -1,211 +1,50 @@
 import pygame
 import keyboard
-import math
 import csv
+import threading
 import ast
+from pynput import mouse
 
-class wall():
-    def __init__(self, pos1, pos2):
-        self.pos1 = pos1
-        self.pos2 = pos2
+undoplus = 0
 
-        self.type = 1
-
-        self.on = 1
-
-        self.sizex = abs(pos1[0]-pos2[0])
-        self.sizey = abs(pos1[1]-pos2[1])
-
-    def draw(self):
-        pygame.draw.rect(screen,RED,(self.pos1[0],self.pos1[1],self.sizex,self.sizey))
-
-    def collision(self,point):
-        if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
-
-            right = abs(point[0] - self.pos1[0])
-            left = abs(point[0] - self.pos2[0])
-            down = abs(point[1] - self.pos1[1])
-            up = abs(point[1] - self.pos2[1])
-
-            thething = 1
-            smallest = right
-            if smallest > left:
-                smallest = left
-                thething = 2
-            if smallest > down:
-                smallest = down
-                thething = 3
-            if smallest > up:
-                thething = 4
-            return (True, thething)
-        else:
-            return (False, 0)
-
-class winnermode(wall):
-    def __init__(self, pos1, pos2):
-        super().__init__(pos1,pos2)
-        self.type = 2
-    def collision(self, point):
-        if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
-            return(True, 5)
-        else:
-            return(False,0)
-    def draw(self):
-        pygame.draw.rect(screen,GREEN,(self.pos1[0],self.pos1[1],self.sizex,self.sizey))
-
-class line():
-    def __init__(self,pos1,pos2):
-        self.pos1 = pos1
-        self.pos2 = pos2
-        self.timer = 40
-    def update(self):
-        fade = self.timer/40
-        print(fade)
-        pygame.draw.line(screen, [255*fade,255*fade,255*fade], self.pos1, self.pos2, int(7*fade))
-        pygame.draw.circle(screen,[255*fade,255*fade,255*fade], (self.pos1[0]+int(2*fade),self.pos1[1]+int(2*fade)) ,int(4*fade))
-        if self.timer == 0:
-            return True
-        else:
-            self.timer -= 1
-            return False
-
-
-class projectile():
-    def __init__(self,pos,angle):
-        self.pos = pos
-        self.angle = angle
-        self.ticker = 0
-        self.timer = 2000
-    def update(self,distance, walls, iteration):
-        global lines
-        if self.ticker != 0:
-            self.ticker -= 1
-        x1 = distance * math.sin(self.angle)
-        y1 = distance * math.cos(self.angle)
-
-        pos1 = self.pos
-        if self.ticker <= 0:
-            collided = False
-            for obj in walls:
-                this = obj.collision([self.pos[0]+x1,self.pos[1]+y1])
-                if this[0]:
-                    if this[1] == 5:
-                        return "lol"
-                    collided = True
-                    collisionpos = [self.pos[0]+x1,self.pos[1]+y1]
-                    collidedObj = obj
-                    break
-            if collided:
-                bruh = drawline(self.pos, collisionpos, collidedObj)
-                lines.append(line(self.pos, bruh[1]))
-                distleft = 50 - math.sqrt((abs(self.pos[0]-bruh[1][0]))**2 + (abs(self.pos[1]-bruh[1][1]))**2)
-                if bruh[0] == 1:
-                    self.angle = -self.angle
-                    self.pos = bruh[1]
-                elif bruh[0] == 2:
-                    self.angle = -self.angle
-                    self.pos = bruh[1]
-                elif bruh[0] == 3:
-                    normal = math.pi
-                    self.angle = normal-self.angle
-                    self.pos = bruh[1]
-                elif bruh[0] == 4:
-                    normal = math.pi
-                    self.angle = normal-self.angle
-                    self.pos = bruh[1]
-
-                """
-                match bruh[0]:
-                    case 1:
-
-                    case 2:
-                        self.angle = -self.angle
-                        self.pos = bruh[1]
-                    case 3:
-                        normal = math.pi
-                        self.angle = normal-self.angle
-                        self.pos = bruh[1]
-                    case 4:
-                        normal = math.pi
-                        self.angle = normal-self.angle
-                        self.pos = bruh[1]
-                    """
-
-                self.update(distleft, walls, 1)
-
-            else:
-                self.pos = [self.pos[0]+x1,self.pos[1]+y1]
-                lines.append(line(pos1,self.pos))
-            self.ticker = 10
-        if not iteration == 0:
-          lines.append(line(pos1,self.pos))
-        pygame.draw.circle(screen,(0,0,255), self.pos, 2)
-        self.timer -= 1
-        return self.timer == 0
-
-
-class player():
-    def __init__(self,pos):
-        self.pos = pos
-        self.velocity = [0,0]
-    def draw(self):
-        pygame.draw.circle(screen, (255,255,255), self.pos, 10)
-    def update(self,walls):
-        if keyboard.is_pressed("w"):
-            self.velocity[1] -= 0.5
-        if keyboard.is_pressed("a"):
-            self.velocity[0] -= 0.5
-        if keyboard.is_pressed("s"):
-            self.velocity[1] += 0.5
-        if keyboard.is_pressed("d"):
-            self.velocity[0] += 0.5
-        self.velocity[0] *= 0.8
-        self.velocity[1] *= 0.8
-        self.pos[0] += self.velocity[0]
-        self.pos[1] += self.velocity[1]
-
-        for obj in walls:
-            if obj.collision([self.pos[0]+10,self.pos[1]])[0]:
-                self.velocity[0] = 0
-                self.pos[0] = obj.pos1[0]-10
-            elif obj.collision([self.pos[0]-10,self.pos[1]])[0]:
-                self.velocity[0] = 0
-                self.pos[0] = obj.pos2[0]+10
-            if obj.collision([self.pos[0], self.pos[1]-10])[0]:
-                self.velocity[1] = 0
-                self.pos[1] = obj.pos2[1]+10
-            elif obj.collision([self.pos[0],self.pos[1]+10])[0]:
-                self.velocity[1] = 0
-                self.pos[1] = obj.pos1[1]-10
+name = input("choose level name: example: level1.csv ")
 
 
 
-def calculation(n, pos1, xdeviance, ydeviance,sample):
-    return abs((pos1[0] + xdeviance*(n/(sample*2)))), abs(pos1[1] + (ydeviance*(n/(sample*2))))
+undo = []
+walltype = 1
+def on_click(x, y, button, pressed):
 
-def drawline(pos1,pos2,obj):
-
-
-    xdeviance = pos2[0] - pos1[0]
-    ydeviance = pos2[1] - pos1[1]
-
-    samplesize = 20
-
-    for n in range(samplesize*2):
-        if obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize))[0]:
-            sidehit = obj.collision(calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize))[1]
-            incursionpos = calculation((n*2)+1, pos1, xdeviance,ydeviance,samplesize)
-            return sidehit, incursionpos
+    global pos1
+    global walltype
 
 
+    btn = button.name
+    if pressed and btn == 'left':
+        pos1 = pygame.mouse.get_pos()
+        if keyboard.is_pressed("b"):
+            for x in walls:
+                if x.check(pos1):
+                    walls.remove(x)
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
+    elif btn == 'left':
+        pos2 = pygame.mouse.get_pos()
+        if walltype == 1:
+            walls.append(wall((pos1),pos2,1,1))
+        elif walltype == 2:
+            walls.append(wall((pos1),pos2,2,1))
+        elif walltype == 3:
+            walls.append(wall((pos1),pos2,3,1))
+        pos1 = None
 
 
-testing = False
+
+
+listener = mouse.Listener(on_click=on_click)
+listener.start()
+
+
+
 
 pygame.init()
 size = (1000,700)
@@ -214,118 +53,132 @@ pygame.display.set_caption("My Game")
 done = False
 clock = pygame.time.Clock()
 
+class wall():
+    def __init__(self,pos1,pos2,type,on):
+        temppos = [pos1[0],pos1[1]]
+        tempmousepos = [pos2[0],pos2[1]]
+        if pos1[0] > pos2[0]:
+            temppos[0] = mousepos[0]
+            tempmousepos[0] = pos1[0]
+        if pos1[1] > pos2[1]:
+            temppos[1] = mousepos[1]
+            tempmousepos[1] = pos1[1]
 
-playerobj = player([500,300])
+        self.pos1 = temppos
+        self.pos2 = tempmousepos
+        self.width = abs(pos1[0]-pos2[0])
+        self.height = abs(pos1[1]-pos2[1])
 
-angle = 0
+        self.type = type
+        self.on = 1
+        if self.type == 1:
+            self.colour = (255,0,0)
+        elif self.type == 2:
+            self.colour = (0,255,0)
+        elif self.type == 3:
+            self.colour = (255,255,255)
+    def check(self,point):
+        if point[0] >= self.pos1[0] and point[0] <= self.pos2[0] and point[1] >= self.pos1[1] and point[1] <= self.pos2[1]:
+            return True
+        else:
+            return False
 
-lines = []
 
-bullets = []
+    def draw(self):
+        if self.type == 3:
+            pygame.draw.circle(screen,(255,255,255),self.pos1,10)
+        else:
+            pygame.draw.rect(screen,self.colour,(self.pos1[0],self.pos1[1],self.width,self.height))
 
+
+ticker = 0
 
 walls = []
-walls.append(wall((-100,-100),(size[0],10)))
-walls.append(wall((size[0]-20,-100),(size[0]+100,size[1]+60)))
-walls.append(wall((-100,-100),(10,size[1]+60)))
-walls.append(wall((-100,size[1]-10),(size[0]+100,size[1]+100)))
-
-
-"""
-walls.append(wall((300,400),(600,420)))
-walls.append(winnermode((300,450),(350,500)))
-
-with open('level1.csv', 'w', newline='') as outfile:
-    writer = csv.writer(outfile)
-    for x in walls[4:]:
-        writer.writerow([x.pos1,x.pos2,x.type,x.on])
-"""
+walls.append(wall((-100,-100),(size[0],10),1,1))
+walls.append(wall((size[0]-20,-100),(size[0]+100,size[1]+60),1,1))
+walls.append(wall((-100,-100),(10,size[1]+60),1,1))
+walls.append(wall((-100,size[1]-10),(size[0]+100,size[1]+100),1,1))
 
 
 
-with open('levelx.csv', 'r', newline='') as infile:
-    reader = csv.reader(infile)
-    for x in reader:
-        peram = []
-        for y in x:
-            if len(y) == 1:
-                peram.append(int(y))
-            else:
-                peram.append(ast.literal_eval(y))
-        if peram[2] == 1:
-            walls.append(wall(peram[0],peram[1]))
-        elif peram[2] == 2:
-            walls.append(winnermode(peram[0],peram[1]))
+if name == "edit":
+    name = input("ok choose what level you want to edit")
+    with open(name, 'r', newline='') as infile:
+        reader = csv.reader(infile)
+        for x in reader:
+            peram = []
+            for y in x:
+                if len(y) == 1:
+                    peram.append(int(y))
+                else:
+                    peram.append(ast.literal_eval(y))
+            walls.append(wall(peram[0],peram[1],peram[2],peram[3]))
 
+done = False
+the = 0
 
+pos1 = None
 
-
-
-
-
-# -------- Main Program Loop -------------------------------------------------------------------------------------------------------------------
 while not done:
-    # --- Main event loop
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
 
-    screen.fill(BLACK)
 
-    playerobj.update(walls)
+    screen.fill((0,0,0))
+    for x in walls:
+        x.draw()
 
-    if keyboard.is_pressed("right"):
-        angle -= 1
-        if angle < 0:
-            angle = angle + 360
-    if keyboard.is_pressed("left"):
-        angle += 1
-        if angle > 360:
-            angle = angle -360
-    radians = angle * 3.14159 /180
-
-
-    x1 = 50 * math.sin(radians)
-    y1 = 50 * math.cos(radians)
-
-    shootpos = (playerobj.pos[0]+x1,playerobj.pos[1]+y1)
+    mousepos = pygame.mouse.get_pos()
+    if pos1:
+        temppos = [pos1[0],pos1[1]]
+        tempmousepos = [mousepos[0],mousepos[1]]
+        if pos1[0] > mousepos[0]:
+            temppos[0] = mousepos[0]
+            tempmousepos[0] = pos1[0]
+        if pos1[1] > mousepos[1]:
+            temppos[1] = mousepos[1]
+            tempmousepos[1] = pos1[1]
 
 
-    if keyboard.is_pressed("space")and not bullets:
-        bullets.append(projectile(playerobj.pos, radians))
+        pygame.draw.rect(screen,(100,100,100),(temppos[0],temppos[1],abs(temppos[0]-tempmousepos[0]),abs(temppos[1]-tempmousepos[1])))
 
-    for obj in walls:
-        obj.draw()
+    if keyboard.is_pressed("2"):
+        walltype = 2
+    elif keyboard.is_pressed("1"):
+        walltype = 1
+    elif keyboard.is_pressed("3"):
+        walltype = 3
 
-    playerobj.draw()
 
-    for n in range(5):
-        shootpos = (playerobj.pos[0]+(x1*n),playerobj.pos[1]+(y1*n))
-        pygame.draw.circle(screen,(255,255,255),shootpos,2)
+    if ticker > 0:
+        ticker -= 1
 
-    for obj in lines:
-        if obj.update():
-            lines.remove(obj)
 
-    for obj in bullets:
-            winner = obj.update(50,walls, 0)
-            if winner == "lol":
-                c = 4/3
-                walls = walls[      :3       +1]
-                lines = []
-                bullets.remove(obj)
-                playerobj = player([500,300])
-                angle = 0
-            elif winner:
-                bullets.remove(obj)
+    if walltype == 1:
+        pygame.draw.circle(screen,(100,0,0),(30,20),10)
+    elif walltype == 2:
+        pygame.draw.circle(screen,(0,100,0),(30,20),10)
+    elif walltype == 3:
+        pygame.draw.circle(screen,(100,100,100),(30,20),10)
+
+    if keyboard.is_pressed("z") and ticker == 0:
+        walls.pop()
+        ticker = 10
+
+    if keyboard.is_pressed("s"):
+        with open(name, 'w', newline='') as outfile:
+            writer = csv.writer(outfile)
+            for x in walls[4:]:
+                writer.writerow([x.pos1,x.pos2,x.type,x.on])
+        listener.stop()
+        pygame.quit()
+        quit()
 
 
     pygame.display.flip()
-    # --- Limit to 60 frames per second
-
     clock.tick(60)
 
-
-
-# Close the window and quit.
+listener.stop()
 pygame.quit()
+quit()
