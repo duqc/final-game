@@ -61,7 +61,8 @@ class line():
     def update(self):
         fade = self.timer/40
         print(fade)
-        pygame.draw.line(screen, [255*fade,255*fade,255*fade], self.pos1, self.pos2)
+        pygame.draw.line(screen, [255*fade,255*fade,255*fade], self.pos1, self.pos2, int(7*fade))
+        pygame.draw.circle(screen,[255*fade,255*fade,255*fade], (self.pos1[0]+int(2*fade),self.pos1[1]+int(2*fade)) ,int(4*fade))
         if self.timer == 0:
             return True
         else:
@@ -74,7 +75,7 @@ class projectile():
         self.pos = pos
         self.angle = angle
         self.ticker = 0
-        self.timer = 700
+        self.timer = 2000
     def update(self,distance, walls, iteration):
         global lines
         if self.ticker != 0:
@@ -98,10 +99,25 @@ class projectile():
                 bruh = drawline(self.pos, collisionpos, collidedObj)
                 lines.append(line(self.pos, bruh[1]))
                 distleft = 50 - math.sqrt((abs(self.pos[0]-bruh[1][0]))**2 + (abs(self.pos[1]-bruh[1][1]))**2)
+                if bruh[0] == 1:
+                    self.angle = -self.angle
+                    self.pos = bruh[1]
+                elif bruh[0] == 2:
+                    self.angle = -self.angle
+                    self.pos = bruh[1]
+                elif bruh[0] == 3:
+                    normal = math.pi
+                    self.angle = normal-self.angle
+                    self.pos = bruh[1]
+                elif bruh[0] == 4:
+                    normal = math.pi
+                    self.angle = normal-self.angle
+                    self.pos = bruh[1]
+
+                """
                 match bruh[0]:
                     case 1:
-                        self.angle = -self.angle
-                        self.pos = bruh[1]
+
                     case 2:
                         self.angle = -self.angle
                         self.pos = bruh[1]
@@ -113,20 +129,43 @@ class projectile():
                         normal = math.pi
                         self.angle = normal-self.angle
                         self.pos = bruh[1]
-
+                    """
 
                 self.update(distleft, walls, 1)
 
             else:
                 self.pos = [self.pos[0]+x1,self.pos[1]+y1]
                 lines.append(line(pos1,self.pos))
-            self.ticker = 30
+            self.ticker = 10
         if not iteration == 0:
           lines.append(line(pos1,self.pos))
         pygame.draw.circle(screen,(0,0,255), self.pos, 2)
         self.timer -= 1
         return self.timer == 0
 
+
+
+def load(level):
+    global playerobj
+    with open(level, 'r', newline='') as infile:
+        reader = csv.reader(infile)
+        for x in reader:
+            peram = []
+            for y in x:
+                if len(y) == 1:
+                    peram.append(int(y))
+                else:
+                    peram.append(ast.literal_eval(y))
+            if peram[2] == 1:
+                walls.append(wall(peram[0],peram[1]))
+            elif peram[2] == 2:
+                walls.append(winnermode(peram[0],peram[1]))
+            elif peram[2] == 3:
+                print("hi")
+                playerobj = player(peram[0])
+
+
+playerobj = None
 
 class player():
     def __init__(self,pos):
@@ -165,7 +204,7 @@ class player():
 
 
 def calculation(n, pos1, xdeviance, ydeviance,sample):
-                return abs((pos1[0] + xdeviance*(n/(sample*2)))), abs(pos1[1] + (ydeviance*(n/(sample*2))))
+    return abs((pos1[0] + xdeviance*(n/(sample*2)))), abs(pos1[1] + (ydeviance*(n/(sample*2))))
 
 def drawline(pos1,pos2,obj):
 
@@ -199,8 +238,6 @@ done = False
 clock = pygame.time.Clock()
 
 
-playerobj = player([500,300])
-
 angle = 0
 
 lines = []
@@ -224,9 +261,16 @@ with open('level1.csv', 'w', newline='') as outfile:
     for x in walls[4:]:
         writer.writerow([x.pos1,x.pos2,x.type,x.on])
 """
+levels = ["level1.csv","level2.csv","level3.csv","level4.csv"]
+levelcounter = 0
+
+load(levels[levelcounter])
 
 
-with open('level1.csv', 'r', newline='') as infile:
+
+
+"""
+with load('level1.csv', 'r', newline='') as infile:
     reader = csv.reader(infile)
     for x in reader:
         peram = []
@@ -239,7 +283,7 @@ with open('level1.csv', 'r', newline='') as infile:
             walls.append(wall(peram[0],peram[1]))
         elif peram[2] == 2:
             walls.append(winnermode(peram[0],peram[1]))
-
+"""
 
 
 
@@ -277,6 +321,9 @@ while not done:
     if keyboard.is_pressed("space")and not bullets:
         bullets.append(projectile(playerobj.pos, radians))
 
+    if keyboard.is_pressed("esc"):
+        bullets = []
+
     for obj in walls:
         obj.draw()
 
@@ -299,6 +346,10 @@ while not done:
                 bullets.remove(obj)
                 playerobj = player([500,300])
                 angle = 0
+                levelcounter += 1
+                load(levels[levelcounter])
+
+
             elif winner:
                 bullets.remove(obj)
 
