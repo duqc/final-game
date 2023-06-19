@@ -1,14 +1,19 @@
-import pygame
-import keyboard
-import csv
-import threading
-import ast
-from pynput import mouse
+try:
+    import pygame
+    import keyboard
+    import csv
+    import ast
+    from pynput import mouse
+except ModuleNotFoundError:
+    raise ModuleNotFoundError('a module was not found. please type "pip install keyboard pynput" into cmd.')
 
-undoplus = 0
 
-name = input("choose level name: example: level1.csv ")
 
+try:
+    name = input("choose level name: example: level1.csv ")
+except KeyboardInterrupt:
+    print("cancelled loool")
+    quit()
 
 
 undo = []
@@ -102,7 +107,12 @@ walls.append(wall((-100,size[1]-10),(size[0]+100,size[1]+100),1,1))
 
 
 if name == "edit":
-    name = input("ok choose what level you want to edit")
+    try:
+        name = input("ok choose what level you want to edit")
+    except KeyboardInterrupt:
+        print("quitted")
+        pygame.quit()
+        quit
     with open(name, 'r', newline='') as infile:
         reader = csv.reader(infile)
         for x in reader:
